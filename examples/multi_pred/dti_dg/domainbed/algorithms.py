@@ -73,7 +73,9 @@ class ERM(Algorithm):
     def __init__(self, input_shape, num_classes, num_domains, hparams):
         super(ERM, self).__init__(input_shape, num_classes, num_domains,
                                   hparams)
-        
+        # 这个模型核心需要弄懂的地方就是这里
+        # self.featurizer相当于整个网络结构，包括前面的Drug和Protein特征的提取以及后面的全连接层
+        # self.classifier就是把最后当做一个回归问题，得到最终的一个输出
         self.featurizer = networks.DTI_Encoder()
         self.classifier = networks.Classifier(
             self.featurizer.n_outputs,

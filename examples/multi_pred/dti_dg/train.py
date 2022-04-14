@@ -82,6 +82,8 @@ print('HParams:')
 for k, v in sorted(hparams.items()):
     print('\t{}: {}'.format(k, v))
 
+# 固定torch的随机种子和算法
+# https://blog.csdn.net/weixin_41990278/article/details/106268969
 random.seed(args.seed)
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -94,7 +96,7 @@ else:
     device = "cpu"
 
 from tdc import Evaluator
-evaluator = Evaluator(name = 'PCC')
+evaluator = Evaluator(name = 'PCC') # 使用皮尔逊相关系数进行评估
     
 print("preparing datasets...")
 ENVIRONMENTS = [str(i) for i in list(range(2013, 2022))]
@@ -112,6 +114,7 @@ test_set = []
 
 print("constructing in(train)/out(validation) splits with 80%/20% for training dataset")
 
+# 这里把训练集，测试集都给切分了，但是切分test的时候有一部分数据并没有使用
 for env_i, env in enumerate(dataset):
     uda = []
     
@@ -125,6 +128,7 @@ for env_i, env in enumerate(dataset):
         
     else:
         ## validation
+        # 把训练集进行切分，out是验证集，in_是训练集
         out, in_ = misc.split_dataset(env,
             int(len(env)*args.holdout_fraction),
             misc.seed_hash(args.trial_seed, env_i))
@@ -164,6 +168,8 @@ eval_loaders = [FastDataLoader(
     num_workers=dataset.N_WORKERS)
     for env, _ in (test_set)]
 
+# 到这里数据就算加载完了
+
 eval_weights = [None for _, weights in (test_set)]
 
 eval_loader_names = ['env_{}'.format(idx2test_env[i])
@@ -172,6 +178,10 @@ eval_loader_names = ['env_{}'.format(idx2test_env[i])
 print("getting model...")
 
 algorithm_class = algorithms.get_algorithm_class(args.algorithm)
+# TODO: 这里涉及到一个input_shape，所以只需要在前面进行一个拼接，然后把shape改成新的维度即可
+# input_shape是[(26, 100), (63, 1000)]
+# 这里就有点不明白了，药物长度是100，smiles长度是63，为啥是(26,100)这种组合？
+# 应该是个bug，这里写的self.input_shape其实根本就没有用上，
 algorithm = algorithm_class(dataset.input_shape, dataset.num_classes,
     len(dataset) - len(args.test_envs), hparams)
 
@@ -187,6 +197,8 @@ best_pcc = -1
 print("prepare for training...")
 
 train_minibatches_iterator = zip(*train_loaders)
+# Python中通过Key访问字典，当Key不存在时，会引发‘KeyError’异常。
+# 为了避免这种情况的发生，可以使用collections类中的defaultdict()方法来为字典提供默认值。
 checkpoint_vals = collections.defaultdict(lambda: [])
 
 steps_per_epoch = min([len(env)/hparams['batch_size'] for env,_ in in_splits])

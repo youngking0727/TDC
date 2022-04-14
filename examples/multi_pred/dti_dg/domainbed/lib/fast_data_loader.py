@@ -12,6 +12,14 @@ class _InfiniteSampler(torch.utils.data.Sampler):
             for batch in self.sampler:
                 yield batch
 
+"""
+torch.utils.data.WeightedRandomSampler(weights, num_samples, replacement=True, generator=None)
+Parameters:
+weights (sequence) – a sequence of weights, not necessary summing up to one(样本数量的倒数，如猫狗图片的如果有10张和20张，weights可设置为[0.67, 0.33])
+num_samples (int) – number of samples to draw(还是用上述例子，此处为30)
+replacement (bool) – if True, samples are drawn with replacement. If not, they are drawn without replacement, which means that when a sample index is drawn for a row, it cannot be drawn again for that row.(后续例子重点讲这个参数。即是否重复取出样本以确保采样的均衡)
+generator (Generator) – Generator used in sampling.(不用管)
+"""
 class InfiniteDataLoader:
     def __init__(self, dataset, weights, batch_size, num_workers):
         super().__init__()
